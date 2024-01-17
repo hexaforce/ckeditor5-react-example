@@ -14,7 +14,7 @@ import "ckbox/dist/styles/ckbox.css";
 import format from "date-fns/format";
 import ja from "date-fns/locale/ja";
 
-import { extraPlugins, plugins, toolbar } from "./config-default";
+import { commentEditorPlugins, plugins } from "./config-default";
 
 export default class Editor extends Component {
   state = {
@@ -114,7 +114,7 @@ export default class Editor extends Component {
             editor={ClassicEditor}
             config={{
               plugins: plugins,
-              toolbar: toolbar,
+              toolbar: ["heading", "|", "fontsize", "fontfamily", "|", "bold", "italic", "underline", "strikethrough", "removeFormat", "highlight", "|", "alignment", "|", "numberedList", "bulletedList", "|", "undo", "redo", "|", "comment", "commentsArchive", "trackChanges", "|", "ckbox", "imageUpload", "link", "blockquote", "insertTable", "mediaEmbed"],
               cloudServices: {
                 tokenUrl: cloudServicesConfig.tokenUrl,
                 webSocketUrl: cloudServicesConfig.webSocketUrl,
@@ -143,7 +143,7 @@ export default class Editor extends Component {
               },
               comments: {
                 editorConfig: {
-                  extraPlugins: extraPlugins,
+                  extraPlugins: commentEditorPlugins,
                 },
                 formatDateTime: (date) => format(date, "yyyy/MM/dd", { locale: ja }),
               },

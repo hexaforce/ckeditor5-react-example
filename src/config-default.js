@@ -31,13 +31,10 @@ import RemoveFormat from "@ckeditor/ckeditor5-remove-format/src/removeformat";
 import Table from "@ckeditor/ckeditor5-table/src/table";
 import TableToolbar from "@ckeditor/ckeditor5-table/src/tabletoolbar";
 import TrackChanges from "@ckeditor/ckeditor5-track-changes/src/trackchanges";
-import "ckbox/dist/styles/ckbox.css";
 import { Paragraph } from "ckeditor5/src/paragraph";
 
 const plugins = [Alignment, Autoformat, BlockQuote, Bold, CKBoxPlugin, PictureEditing, CloudServices, Comments, Essentials, FontFamily, FontSize, Heading, Highlight, Image, ImageCaption, ImageResize, ImageStyle, ImageToolbar, ImageUpload, Italic, Link, List, MediaEmbed, Paragraph, PasteFromOffice, PresenceList, RealTimeCollaborativeComments, RealTimeCollaborativeTrackChanges, RemoveFormat, Strikethrough, Table, TableToolbar, TrackChanges, Underline];
 
-const toolbar = ["heading", "|", "fontsize", "fontfamily", "|", "bold", "italic", "underline", "strikethrough", "removeFormat", "highlight", "|", "alignment", "|", "numberedList", "bulletedList", "|", "undo", "redo", "|", "comment", "commentsArchive", "trackChanges", "|", "ckbox", "imageUpload", "link", "blockquote", "insertTable", "mediaEmbed"];
+const commentEditorPlugins = [Bold, Italic, Underline, List, Autoformat];
 
-const extraPlugins = [Bold, Italic, Underline, List, Autoformat];
-
-export { extraPlugins, plugins, toolbar };
+export { commentEditorPlugins, plugins };
