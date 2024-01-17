@@ -9,9 +9,22 @@ import { randomString, users } from "./sample-data";
 
 const LOCAL_STORAGE_KEY = "CKEDITOR_CS_CONFIG";
 
-const ConfigurationPage = (props) => {
-  const [config, setConfig] = useState(getStoredConfig());
-  const [channelId] = useState(handleChannelIdInUrl());
+const InitialConfigurationDialog = (props) => {
+  const cloudServicesConfig = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY) || "{}");
+  const [config, setConfig] = useState({
+    tokenUrl: cloudServicesConfig.tokenUrl || "",
+    ckboxTokenUrl: cloudServicesConfig.ckboxTokenUrl || "",
+    webSocketUrl: cloudServicesConfig.webSocketUrl || "",
+  });
+
+  const channelIdMatch = location.search.match(/channelId=(.+)$/);
+  let id = channelIdMatch ? decodeURIComponent(channelIdMatch[1]) : null;
+  if (!id) {
+    id = randomString();
+    window.history.replaceState({}, document.title, generateUrlWithChannelId(id));
+  }
+  const [channelId] = useState(id);
+
   const [selectedUser, setSelectedUser] = useState(null);
   const [isWarning, setIsWarning] = useState(false);
 
@@ -51,7 +64,7 @@ const ConfigurationPage = (props) => {
       return;
     }
 
-    storeConfig({ ...config, tokenUrl: getRawTokenUrl(config.tokenUrl) });
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify({ ...config, tokenUrl: getRawTokenUrl(config.tokenUrl) }));
     updateDChannelIdInUrl(channelId);
     props.onSubmit({ ...config, channelId });
   };
@@ -81,7 +94,15 @@ const ConfigurationPage = (props) => {
             {users.map((data) => (
               <div key={data.id} onClick={() => selectUser(data)} className={selectedUser === data.id ? "active" : ""}>
                 {data.avatar && <img src={data.avatar} />}
-                {!data.avatar && data.name && <span className="pseudo-avatar">{getUserInitials(data.name)}</span>}
+                {!data.avatar && data.name && (
+                  <span className="pseudo-avatar">
+                    {data.name
+                      .split(" ", 2)
+                      .map((part) => part.charAt(0))
+                      .join("")
+                      .toUpperCase()}
+                  </span>
+                )}
                 {!data.avatar && !data.name && <span className="pseudo-avatar anonymous"></span>}
                 {data.name || "(anonymous)"}
                 <span className="role">{data.role}</span>
@@ -103,37 +124,12 @@ const ConfigurationPage = (props) => {
   );
 };
 
-function getUserInitials(name) {
-  return name
-    .split(" ", 2)
-    .map((part) => part.charAt(0))
-    .join("")
-    .toUpperCase();
-}
-
-function handleChannelIdInUrl() {
-  let id = getChannelIdFromUrl();
-
-  if (!id) {
-    id = randomString();
-    updateDChannelIdInUrl(id);
-  }
-
-  return id;
-}
-
 function updateDChannelIdInUrl(id) {
   window.history.replaceState({}, document.title, generateUrlWithChannelId(id));
 }
 
 function generateUrlWithChannelId(id) {
   return `${window.location.href.split("?")[0]}?channelId=${id}`;
-}
-
-function getChannelIdFromUrl() {
-  const channelIdMatch = location.search.match(/channelId=(.+)$/);
-
-  return channelIdMatch ? decodeURIComponent(channelIdMatch[1]) : null;
 }
 
 function isCloudServicesTokenEndpoint(tokenUrl) {
@@ -144,22 +140,7 @@ function getRawTokenUrl(url) {
   if (isCloudServicesTokenEndpoint(url)) {
     return url.split("?")[0];
   }
-
   return url;
 }
 
-function storeConfig(csConfig) {
-  localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(csConfig));
-}
-
-function getStoredConfig() {
-  const config = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY) || "{}");
-
-  return {
-    tokenUrl: config.tokenUrl || "",
-    ckboxTokenUrl: config.ckboxTokenUrl || "",
-    webSocketUrl: config.webSocketUrl || "",
-  };
-}
-
-export default ConfigurationPage;
+export default InitialConfigurationDialog;
