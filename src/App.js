@@ -3,23 +3,21 @@
  * For licensing, see LICENSE.md.
  */
 
-import React, { Component } from "react";
+import React, { useState } from "react";
 import Editor from "./Editor";
 import ConfigurationDialog from "./InitialConfigurationDialog";
 import { initialData } from "./sample-data";
 
-export default class App extends Component {
-  state = {
-    configuration: null,
-  };
+const App = () => {
+  const [configuration, setConfiguration] = useState(null);
 
-  render() {
-    // Configuration data needed to initialize the editor is available only after the configuration dialog
-    // is submitted, hence the editor is initialized after ConfigurationDialog returns the configuration.
-    if (!this.state.configuration) {
-      return <ConfigurationDialog onSubmit={(configuration) => this.setState({ configuration })} />;
-    }
-
-    return <Editor configuration={this.state.configuration} initialData={initialData} />;
+  // Configuration data needed to initialize the editor is available only after the configuration dialog
+  // is submitted, hence the editor is initialized after ConfigurationDialog returns the configuration.
+  if (!configuration) {
+    return <ConfigurationDialog onSubmit={(newConfiguration) => setConfiguration(newConfiguration)} />;
   }
-}
+
+  return <Editor configuration={configuration} initialData={initialData} />;
+};
+
+export default App;
