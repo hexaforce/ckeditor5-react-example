@@ -5,7 +5,7 @@
 
 import React, { Component } from "react";
 
-import ClassicEditor from "@ckeditor/ckeditor5-editor-classic/src/classiceditor";
+import { ClassicEditor } from "@ckeditor/ckeditor5-editor-classic";
 import { CKEditor } from "@ckeditor/ckeditor5-react";
 
 import * as CKBox from "ckbox";
