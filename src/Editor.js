@@ -3,7 +3,7 @@
  * For licensing, see LICENSE.md.
  */
 
-import React, { Component } from "react";
+import React, { useEffect, useRef, useState } from "react";
 
 import { ClassicEditor } from "@ckeditor/ckeditor5-editor-classic";
 import { CKEditor } from "@ckeditor/ckeditor5-react";
@@ -16,171 +16,89 @@ import ja from "date-fns/locale/ja";
 
 import { commentEditorPlugins, plugins } from "./config-default";
 
-export default class Editor extends Component {
-  state = {
-    // You need this state to render the <CKEditor /> component after the layout is ready.
-    // <CKEditor /> needs HTMLElements of `Sidebar` and `PresenceList` plugins provided through the `config` property and you have to ensure that both are already rendered.
-    isLayoutReady: false,
-  };
+const Editor = (props) => {
+  // You should contact CKSource to get the CloudServices configuration.
+  const { configuration, initialData } = props;
 
-  sidebarElementRef = React.createRef();
-  presenceListElementRef = React.createRef();
+  // You need this state to render the <CKEditor /> component after the layout is ready.
+  // <CKEditor /> needs HTMLElements of `Sidebar` and `PresenceList` plugins provided through the `config` property and you have to ensure that both are already rendered.
+  const [isLayoutReady, setIsLayoutReady] = useState(false);
+  const sidebarElementRef = useRef(null);
+  const presenceListElementRef = useRef(null);
 
-  componentDidMount() {
+  useEffect(() => {
     window.CKBox = CKBox;
     // When the layout is ready you can switch the state and render the `<CKEditor />` component.
-    this.setState({ isLayoutReady: true });
-  }
+    setIsLayoutReady(true);
+    return () => {
+      window.removeEventListener("resize", refreshDisplayMode);
+      window.removeEventListener("beforeunload", checkPendingActions);
+    };
+  }, []);
 
-  render() {
-    return (
-      <div className="App">
-        {this.renderHeader()}
-
-        <main>
-          <div className="message">
-            <div className="centered">
-              <h2>CKEditor 5 React integration of classic editor with real-time collaboration</h2>
-              <p>Open this sample in another browser tab to start real-time collaborative editing.</p>
-            </div>
-          </div>
-
-          <div className="centered">
-            <div className="row-presence">
-              <div ref={this.presenceListElementRef} className="presence"></div>
-            </div>
-            {this.renderEditor()}
-          </div>
-        </main>
-
-        {this.renderFooter()}
-      </div>
-    );
-  }
-
-  renderHeader() {
-    return (
-      <header>
-        <div className="centered">
-          <h1>
-            <a href="https://ckeditor.com/ckeditor-5/" target="_blank" rel="noopener noreferrer">
-              <img src="https://c.cksource.com/a/1/logos/ckeditor5.svg" alt="CKEditor 5 logo" />
-              CKEditor 5
-            </a>
-          </h1>
-
-          <nav>
-            <ul>
-              <li>
-                <a href="https://ckeditor.com/collaboration/" target="_blank" rel="noopener noreferrer">
-                  Website
-                </a>
-              </li>
-              <li>
-                <a href="https://ckeditor.com/docs/ckeditor5/latest/features/collaboration/real-time-collaboration/real-time-collaboration.html" target="_blank" rel="noopener noreferrer">
-                  Documentation
-                </a>
-              </li>
-            </ul>
-          </nav>
-        </div>
-      </header>
-    );
-  }
-
-  renderEditor() {
-    // You should contact CKSource to get the CloudServices configuration.
-    const cloudServicesConfig = this.props.configuration;
-    const initialData = this.props.initialData;
+  const renderEditor = () => {
+    const editorConfig = {
+      plugins: plugins,
+      toolbar: ["heading", "|", "fontsize", "fontfamily", "|", "bold", "italic", "underline", "strikethrough", "removeFormat", "highlight", "|", "alignment", "|", "numberedList", "bulletedList", "|", "undo", "redo", "|", "comment", "commentsArchive", "trackChanges", "|", "ckbox", "imageUpload", "link", "blockquote", "insertTable", "mediaEmbed"],
+      cloudServices: {
+        tokenUrl: configuration.tokenUrl,
+        webSocketUrl: configuration.webSocketUrl,
+      },
+      collaboration: {
+        channelId: configuration.channelId,
+      },
+      ckbox: {
+        tokenUrl: configuration.ckboxTokenUrl || configuration.tokenUrl,
+      },
+      image: {
+        toolbar: ["imageStyle:inline", "imageStyle:block", "imageStyle:side", "|", "toggleImageCaption", "imageTextAlternative", "|", "comment"],
+      },
+      table: {
+        contentToolbar: ["tableColumn", "tableRow", "mergeTableCells"],
+        tableToolbar: ["comment"],
+      },
+      mediaEmbed: {
+        toolbar: ["comment"],
+      },
+      sidebar: {
+        container: sidebarElementRef.current,
+      },
+      presenceList: {
+        container: presenceListElementRef.current,
+      },
+      comments: {
+        editorConfig: {
+          extraPlugins: commentEditorPlugins,
+        },
+        formatDateTime: (date) => format(date, "yyyy/MM/dd", { locale: ja }),
+      },
+    };
 
     return (
       <div className="row row-editor">
         {/* Do not render the <CKEditor /> component before the layout is ready. */}
-        {this.state.isLayoutReady && (
+        {isLayoutReady && (
           <CKEditor
             onReady={(editor) => {
-              console.log("Editor is ready to use!", editor);
-
-              // Switch between inline and sidebar annotations according to the window size.
-              this.boundRefreshDisplayMode = this.refreshDisplayMode.bind(this, editor);
-              // Prevent closing the tab when any action is pending.
-              this.boundCheckPendingActions = this.checkPendingActions.bind(this, editor);
-
-              window.addEventListener("resize", this.boundRefreshDisplayMode);
-              window.addEventListener("beforeunload", this.boundCheckPendingActions);
-              this.refreshDisplayMode(editor);
+              // console.log("Editor is ready to use!", editor);
+              window.addEventListener("resize", refreshDisplayMode);
+              window.addEventListener("beforeunload", checkPendingActions);
+              refreshDisplayMode(editor);
             }}
             onChange={(event, editor) => console.log({ event, editor })}
             editor={ClassicEditor}
-            config={{
-              plugins: plugins,
-              toolbar: ["heading", "|", "fontsize", "fontfamily", "|", "bold", "italic", "underline", "strikethrough", "removeFormat", "highlight", "|", "alignment", "|", "numberedList", "bulletedList", "|", "undo", "redo", "|", "comment", "commentsArchive", "trackChanges", "|", "ckbox", "imageUpload", "link", "blockquote", "insertTable", "mediaEmbed"],
-              cloudServices: {
-                tokenUrl: cloudServicesConfig.tokenUrl,
-                webSocketUrl: cloudServicesConfig.webSocketUrl,
-              },
-              collaboration: {
-                channelId: cloudServicesConfig.channelId,
-              },
-              ckbox: {
-                tokenUrl: cloudServicesConfig.ckboxTokenUrl || cloudServicesConfig.tokenUrl,
-              },
-              image: {
-                toolbar: ["imageStyle:inline", "imageStyle:block", "imageStyle:side", "|", "toggleImageCaption", "imageTextAlternative", "|", "comment"],
-              },
-              table: {
-                contentToolbar: ["tableColumn", "tableRow", "mergeTableCells"],
-                tableToolbar: ["comment"],
-              },
-              mediaEmbed: {
-                toolbar: ["comment"],
-              },
-              sidebar: {
-                container: this.sidebarElementRef.current,
-              },
-              presenceList: {
-                container: this.presenceListElementRef.current,
-              },
-              comments: {
-                editorConfig: {
-                  extraPlugins: commentEditorPlugins,
-                },
-                formatDateTime: (date) => format(date, "yyyy/MM/dd", { locale: ja }),
-              },
-            }}
+            config={editorConfig}
             data={initialData}
           />
         )}
-        <div ref={this.sidebarElementRef} className="sidebar"></div>
+        <div ref={sidebarElementRef} className="sidebar"></div>
       </div>
     );
-  }
+  };
 
-  renderFooter() {
-    return (
-      <footer>
-        <div className="centered">
-          <p>
-            <a href="https://ckeditor.com/ckeditor-5/" target="_blank" rel="noopener noreferrer">
-              CKEditor 5
-            </a>
-            – Rich text editor of tomorrow, available today
-          </p>
-          <p>
-            Copyright © 2003-2023,
-            <a href="https://cksource.com/" target="_blank" rel="noopener noreferrer">
-              CKSource
-            </a>
-            Holding sp. z o.o. All rights reserved.
-          </p>
-        </div>
-      </footer>
-    );
-  }
-
-  refreshDisplayMode(editor) {
+  const refreshDisplayMode = (editor) => {
     const annotationsUIs = editor.plugins.get("AnnotationsUIs");
-    const sidebarElement = this.sidebarElementRef.current;
+    const sidebarElement = sidebarElementRef.current;
 
     if (window.innerWidth < 1070) {
       sidebarElement.classList.remove("narrow");
@@ -194,17 +112,27 @@ export default class Editor extends Component {
       sidebarElement.classList.remove("hidden", "narrow");
       annotationsUIs.switchTo("wideSidebar");
     }
-  }
+  };
 
-  checkPendingActions(editor, domEvt) {
+  const checkPendingActions = (editor, domEvt) => {
     if (editor.plugins.get("PendingActions").hasAny) {
       domEvt.preventDefault();
       domEvt.returnValue = true;
     }
-  }
+  };
 
-  componentWillUnmount() {
-    window.removeEventListener("resize", this.boundRefreshDisplayMode);
-    window.removeEventListener("beforeunload", this.boundCheckPendingActions);
-  }
-}
+  return (
+    <div className="App">
+      <main>
+        <div className="centered">
+          <div className="row-presence">
+            <div ref={presenceListElementRef} className="presence"></div>
+          </div>
+          {renderEditor()}
+        </div>
+      </main>
+    </div>
+  );
+};
+
+export default Editor;
